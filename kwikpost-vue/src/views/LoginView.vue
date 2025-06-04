@@ -27,8 +27,8 @@
       
       <p v-if="error" class="error">{{ error }}</p>
       
-      <button type="submit" class="btn btn--cta">
-        Login
+      <button type="submit" class="btn btn--cta" :disabled="loading">
+        {{ loading ? 'Iniciant sessió...' : 'Login' }}
       </button>
     </form>
   </div>
@@ -49,21 +49,41 @@ export default {
     const username = ref('')
     const password = ref('')
     const error = ref('')
+    const loading = ref(false)
     
     const handleLogin = async () => {
       error.value = ''
+      loading.value = true
       
       try {
         const response = await api.login(username.value, password.value)
+        console.log('Login response:', response.data) // Per debugar
         
         // Guardar dades a la store
-        sessionStore.setSession(response.data.user, response.data.token)
+        // L'API pot retornar les dades en diferents formats
+        const userData = response.data.user || response.data
+        const token = response.data.token || response.data.access_token
+        
+        if (!token) {
+          throw new Error('No s\'ha rebut cap token')
+        }
+        
+        // Mapejar els camps correctament
+        const userDataMapped = {
+          ...userData,
+          avatar: userData.profileImg || userData.avatar,
+          createdAt: userData.registrationDate || userData.createdAt
+        }
+        
+        sessionStore.setSession(userDataMapped, token)
         
         // Redirigir al perfil
-        router.push(`/profile/${response.data.user.username}`)
+        router.push(`/profile/${userData.username}`)
       } catch (err) {
-        error.value = 'Credencials incorrectes'
+        error.value = err.response?.data?.message || 'Credencials incorrectes'
         console.error('Error login:', err)
+      } finally {
+        loading.value = false
       }
     }
     
@@ -71,6 +91,7 @@ export default {
       username,
       password,
       error,
+      loading,
       handleLogin
     }
   }
@@ -78,6 +99,14 @@ export default {
 </script>
 
 <style scoped>
+.title-section {
+  font-size: 2rem;
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  color: var(--secondary-color);
+}
+
 form {
   display: grid;
   place-items: center;
@@ -104,8 +133,19 @@ input {
   min-height: 2rem;
 }
 
+input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
 .error {
   color: red;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

@@ -20,24 +20,39 @@
       :class="{ active: $route.name === 'profile' }"
     >
       <img 
-        :src="sessionStore.user?.avatar" 
-        :alt="sessionStore.user?.username"
+        v-if="userAvatar"
+        :src="userAvatar" 
+        :alt="sessionStore.user.username"
         class="profile-img"
+        @error="handleImageError"
       >
+      <span v-else class="profile-placeholder">👤</span>
     </router-link>
   </nav>
 </template>
 
 <script>
 import { useSessionStore } from '@/stores/session'
+import { computed } from 'vue'
 
 export default {
   name: 'NavigationComponent',
   setup() {
     const sessionStore = useSessionStore()
     
+    const userAvatar = computed(() => {
+      return sessionStore.user?.avatar || sessionStore.user?.profileImg
+    })
+    
+    const handleImageError = (e) => {
+      // Si la imatge falla, mostrar un placeholder
+      e.target.style.display = 'none'
+    }
+    
     return {
-      sessionStore
+      sessionStore,
+      userAvatar,
+      handleImageError
     }
   }
 }
@@ -77,5 +92,10 @@ export default {
   width: 30px;
   height: 30px;
   border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-placeholder {
+  font-size: 25px;
 }
 </style>

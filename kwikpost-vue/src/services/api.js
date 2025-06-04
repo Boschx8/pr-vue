@@ -9,12 +9,16 @@ const api = axios.create({
 
 // Funció helper per obtenir el token
 const getAuthHeader = () => {
-  // Import dinàmic per evitar problemes de circular dependency
-  const { useSessionStore } = require('@/stores/session')
-  const sessionStore = useSessionStore()
-  
-  if (sessionStore.token) {
-    return { Authorization: `Bearer ${sessionStore.token}` }
+  const storedSession = localStorage.getItem('kwikpost-session')
+  if (storedSession) {
+    try {
+      const session = JSON.parse(storedSession)
+      if (session.token) {
+        return { Authorization: `Bearer ${session.token}` }
+      }
+    } catch (e) {
+      console.error('Error parsing session:', e)
+    }
   }
   return {}
 }
@@ -25,7 +29,7 @@ export default {
     return api.post('/login', { username, password })
   },
   
-  // Posts - amb headers d'autenticació
+  // Posts - SENSE 's' segons els errors
   getPosts(limit = 10, offset = 0) {
     return api.get(`/post?limit=${limit}&offset=${offset}`, {
       headers: getAuthHeader()
@@ -45,7 +49,7 @@ export default {
   },
   
   updatePost(id, content) {
-    return api.put(`/post/${id}`, { id, content }, {
+    return api.put(`/post/${id}`, { content }, {
       headers: getAuthHeader()
     })
   },
@@ -56,7 +60,7 @@ export default {
     })
   },
   
-  // Users
+  // Users - SENSE 's'
   getUser(username) {
     return api.get(`/user/${username}`, {
       headers: getAuthHeader()

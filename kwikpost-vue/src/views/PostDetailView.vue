@@ -9,15 +9,18 @@
       </div>
     </div>
     
-    <ul v-if="replies.length > 0" class="replies-list">
-      <li v-for="reply in replies" :key="reply.id">
-        <PostComponent :post="reply" />
-      </li>
-    </ul>
+    <div v-if="replies.length > 0" class="replies-section">
+      <h3 class="replies-title">Respostes</h3>
+      <ul class="replies-list">
+        <li v-for="reply in replies" :key="reply.id">
+          <PostComponent :post="reply" />
+        </li>
+      </ul>
+    </div>
   </div>
   
-  <div v-else>
-    Carregant...
+  <div v-else class="loading">
+    {{ error || 'Carregant...' }}
   </div>
 </template>
 
@@ -40,6 +43,7 @@ export default {
     
     const post = ref(null)
     const replies = ref([])
+    const error = ref('')
     
     const isOwnPost = computed(() => {
       return post.value?.user.username === sessionStore.user?.username
@@ -48,10 +52,23 @@ export default {
     const loadPost = async () => {
       try {
         const response = await api.getPost(route.params.id)
-        post.value = response.data.post
-        replies.value = response.data.replies || []
-      } catch (error) {
-        console.error('Error carregant post:', error)
+        // L'API pot retornar les dades en diferents formats
+        if (response.data.post) {
+          post.value = response.data.post
+          replies.value = response.data.replies || []
+        } else {
+          // Si retorna directament el post
+          post.value = response.data
+          replies.value = response.data.replies || []
+        }
+      } catch (err) {
+        console.error('Error carregant post:', err)
+        error.value = 'No s\'ha pogut carregar el post'
+        
+        // Si és un 404, tornar a home
+        if (err.response?.status === 404) {
+          setTimeout(() => router.push('/'), 2000)
+        }
       }
     }
     
@@ -60,8 +77,9 @@ export default {
         try {
           await api.deletePost(route.params.id)
           router.push('/')
-        } catch (error) {
-          console.error('Error esborrant post:', error)
+        } catch (err) {
+          console.error('Error esborrant post:', err)
+          alert('No s\'ha pogut esborrar el post')
         }
       }
     }
@@ -77,6 +95,7 @@ export default {
     return {
       post,
       replies,
+      error,
       isOwnPost,
       deletePost,
       editPost
@@ -90,6 +109,7 @@ export default {
   border: 1px solid #ddd;
   border-radius: 20px;
   padding: 10px;
+  background: white;
 }
 
 .actions-wrapper {
@@ -98,11 +118,31 @@ export default {
   gap: 20px;
   margin-top: 10px;
   margin-right: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--grey-color);
+}
+
+.replies-section {
+  margin-top: 20px;
+}
+
+.replies-title {
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  color: var(--secondary-color);
+  padding-left: 20px;
 }
 
 .replies-list {
   margin-left: 20px;
-  margin-top: 20px;
+  list-style: none;
+  padding: 0;
 }
 
 .replies-list li:not(:last-child) {
