@@ -2,6 +2,22 @@
   <div>
     <h1 class="title-section">Login</h1>
     
+    <div class="login-info">
+      <p class="has-color-grey has-text-small">
+        <strong>Credencials de prova:</strong><br>
+        Username: <code>johndoe</code><br>
+        Password: <code>a1b2c3d4</code>
+      </p>
+    </div>
+    
+    <!-- Debug info -->
+    <div v-if="debugInfo" class="debug-info">
+      <h3>🔧 Debug Login:</h3>
+      <p><strong>Sessió actual:</strong> {{ sessionStore.isLoggedIn ? 'Activa' : 'No activa' }}</p>
+      <p v-if="sessionStore.user"><strong>Usuari:</strong> {{ sessionStore.user.username }}</p>
+      <p v-if="sessionStore.token"><strong>Token:</strong> {{ sessionStore.token.substring(0, 20) }}...</p>
+    </div>
+    
     <form @submit.prevent="handleLogin">
       <div class="input-group">
         <label for="username">Username:</label>
@@ -11,6 +27,7 @@
           type="text"
           placeholder="johndoe"
           required
+          :disabled="loading"
         >
       </div>
       
@@ -20,8 +37,9 @@
           id="password"
           v-model="password"
           type="password"
-          placeholder="••••••"
+          placeholder="a1b2c3d4"
           required
+          :disabled="loading"
         >
       </div>
       
@@ -31,12 +49,23 @@
         {{ loading ? 'Iniciant sessió...' : 'Login' }}
       </button>
     </form>
+    
+    <!-- Test token button -->
+    <div v-if="sessionStore.isLoggedIn" class="test-section">
+      <h3>🧪 Test Token:</h3>
+      <button @click="testToken" class="btn" :disabled="testingToken">
+        {{ testingToken ? 'Provant...' : 'Provar token actual' }}
+      </button>
+      <p v-if="tokenTestResult" :class="tokenTestResult.success ? 'success' : 'error'">
+        {{ tokenTestResult.message }}
+      </p>
+    </div>
   </div>
 </template>
 
 <script>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useSessionStore } from '@/stores/session'
 import api from '@/services/api'
 
@@ -44,55 +73,135 @@ export default {
   name: 'LoginView',
   setup() {
     const router = useRouter()
+    const route = useRoute()
     const sessionStore = useSessionStore()
     
-    const username = ref('')
-    const password = ref('')
+    const username = ref('johndoe') // Valor per defecte
+    const password = ref('a1b2c3d4') // Valor per defecte
     const error = ref('')
     const loading = ref(false)
+    const debugInfo = ref(true)
+    const testingToken = ref(false)
+    const tokenTestResult = ref(null)
     
     const handleLogin = async () => {
+      if (!username.value || !password.value) {
+        error.value = 'Si us plau, omple tots els camps'
+        return
+      }
+      
       error.value = ''
       loading.value = true
+      tokenTestResult.value = null
       
       try {
+        console.log('🔐 Intentant login amb:', username.value, '/', password.value)
         const response = await api.login(username.value, password.value)
-        console.log('Login response:', response.data) // Per debugar
+        console.log('📦 Login response completa:', response.data)
         
-        // Guardar dades a la store
-        // L'API pot retornar les dades en diferents formats
+        // Comprovar que tenim les dades necessàries
         const userData = response.data.user || response.data
         const token = response.data.token || response.data.access_token
         
+        console.log('👤 User data:', userData)
+        console.log('🔑 Token:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN')
+        
+        if (!userData) {
+          throw new Error('No s\'han rebut les dades d\'usuari')
+        }
+        
         if (!token) {
-          throw new Error('No s\'ha rebut cap token')
+          throw new Error('No s\'ha rebut el token d\'autenticació')
         }
         
         // Mapejar els camps correctament
         const userDataMapped = {
-          ...userData,
-          avatar: userData.profileImg || userData.avatar,
-          createdAt: userData.registrationDate || userData.createdAt
+          id: userData.id,
+          username: userData.username,
+          name: userData.name ? 
+            `${userData.name} ${userData.surname || ''}`.trim() : 
+            userData.username,
+          avatar: userData.profileImg || userData.avatar || 'https://via.placeholder.com/100',
+          bio: userData.bio || `Hola! Sóc ${userData.name || userData.username}`,
+          createdAt: userData.registrationDate || userData.createdAt || new Date().toISOString()
         }
         
+        console.log('👤 User data mapeada:', userDataMapped)
+        
+        // Guardar a la store
         sessionStore.setSession(userDataMapped, token)
         
-        // Redirigir al perfil
-        router.push(`/profile/${userData.username}`)
+        // Test immediat del token
+        await testTokenImmediately()
+        
+        // Redirigir
+        const redirectPath = route.query.redirect || `/profile/${userData.username}`
+        console.log('🔄 Redirigint a:', redirectPath)
+        router.push(redirectPath)
+        
       } catch (err) {
-        error.value = err.response?.data?.message || 'Credencials incorrectes'
-        console.error('Error login:', err)
+        console.error('❌ Error login:', err)
+        
+        if (err.response?.status === 401) {
+          error.value = 'Credencials incorrectes'
+        } else if (err.response?.status === 404) {
+          error.value = 'Usuari no trobat'
+        } else if (err.response?.data?.message) {
+          error.value = err.response.data.message
+        } else {
+          error.value = 'Error de connexió. Comprova que l\'API estigui funcionant.'
+        }
       } finally {
         loading.value = false
       }
     }
+    
+    const testToken = async () => {
+      await testTokenImmediately()
+    }
+    
+    const testTokenImmediately = async () => {
+      testingToken.value = true
+      tokenTestResult.value = null
+      
+      try {
+        console.log('🧪 Provant token...')
+        const response = await api.getUser(sessionStore.user.username)
+        console.log('✅ Token vàlid! Response:', response.data)
+        tokenTestResult.value = {
+          success: true,
+          message: '✅ Token vàlid!'
+        }
+      } catch (err) {
+        console.error('❌ Token invàlid:', err)
+        tokenTestResult.value = {
+          success: false,
+          message: `❌ Token invàlid: ${err.response?.status} ${err.response?.statusText}`
+        }
+      } finally {
+        testingToken.value = false
+      }
+    }
+    
+    // Comprovar si ja està logat
+    onMounted(() => {
+      if (sessionStore.isLoggedIn) {
+        console.log('ℹ️ Ja està logat, redirigint...')
+        router.push(`/profile/${sessionStore.user.username}`)
+      }
+    })
     
     return {
       username,
       password,
       error,
       loading,
-      handleLogin
+      debugInfo,
+      sessionStore,
+      testingToken,
+      tokenTestResult,
+      handleLogin,
+      testToken
     }
   }
 }
@@ -105,6 +214,44 @@ export default {
   margin-bottom: 2rem;
   text-align: center;
   color: var(--secondary-color);
+}
+
+.login-info, .debug-info {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.debug-info {
+  background-color: #fff3cd;
+  border-color: #ffeaa7;
+}
+
+.debug-info h3 {
+  margin: 0 0 10px 0;
+  color: var(--secondary-color);
+}
+
+.login-info code {
+  background-color: #e9ecef;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+.test-section {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.test-section h3 {
+  margin: 0 0 10px 0;
 }
 
 form {
@@ -123,6 +270,7 @@ form {
 
 label {
   font-size: 1rem;
+  font-weight: 500;
 }
 
 input {
@@ -131,6 +279,7 @@ input {
   border: 1px solid #ddd;
   padding: 0 10px;
   min-height: 2rem;
+  transition: border-color 0.3s;
 }
 
 input:focus {
@@ -138,10 +287,29 @@ input:focus {
   border-color: var(--primary-color);
 }
 
+input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
 .error {
   color: red;
   font-size: 0.9rem;
   text-align: center;
+  background-color: #ffe6e6;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ffcccc;
+}
+
+.success {
+  color: green;
+  font-size: 0.9rem;
+  text-align: center;
+  background-color: #e6ffe6;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccffcc;
 }
 
 .btn:disabled {

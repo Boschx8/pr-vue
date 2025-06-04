@@ -36,7 +36,7 @@
       class="btn load-more"
       @click="loadMorePosts"
     >
-      Load more
+      Load more ({{ posts.length }}/{{ totalPosts }})
     </button>
   </div>
 </template>
@@ -71,17 +71,32 @@ export default {
     
     const loadUserData = async () => {
       try {
+        console.log(`👤 Carregant dades de ${route.params.username}`)
         const response = await api.getUser(route.params.username)
-        // Mapejar els camps correctament
-        const userData = response.data
+        console.log('📦 User response:', response.data)
+        
+        // Gestionar la resposta
+        const userData = response.data.result || response.data
+        
         user.value = {
-          ...userData,
-          avatar: userData.profileImg || userData.avatar,
-          createdAt: userData.registrationDate || userData.createdAt,
-          bio: userData.bio || `Hola! Sóc ${userData.name}`
+          id: userData.id,
+          username: userData.username,
+          name: userData.name ? `${userData.name} ${userData.surname || ''}`.trim() : userData.username,
+          avatar: userData.profileImg || userData.avatar || 'https://via.placeholder.com/100',
+          bio: userData.bio || `Hola! Sóc ${userData.name || userData.username}`,
+          createdAt: userData.registrationDate || userData.createdAt
         }
+        
+        console.log('✅ Usuari carregat:', user.value.username)
+        
       } catch (error) {
-        console.error('Error carregant usuari:', error)
+        console.error('❌ Error carregant usuari:', error)
+        
+        if (error.response?.status === 404) {
+          router.push('/')
+        } else if (error.response?.status === 401) {
+          router.push('/login')
+        }
       }
     }
     
@@ -93,12 +108,36 @@ export default {
           posts.value = []
         }
         
+        console.log(`📝 Carregant posts de ${route.params.username} (offset: ${currentOffset.value})`)
         const response = await api.getUserPosts(route.params.username, limit, currentOffset.value)
-        posts.value = [...posts.value, ...response.data.posts]
-        totalPosts.value = response.data.total
+        console.log('📦 User posts response:', response.data)
+        
+        // Gestionar diferents formats de resposta
+        let newPosts = []
+        let total = 0
+        
+        if (response.data.result && Array.isArray(response.data.result)) {
+          // Format KwikPost: { paginator: {...}, result: [...] }
+          newPosts = response.data.result
+          total = response.data.paginator?.total || 0
+        } else if (response.data.posts && Array.isArray(response.data.posts)) {
+          // Format alternatiu: { posts: [...], total: X }
+          newPosts = response.data.posts
+          total = response.data.total || 0
+        } else if (Array.isArray(response.data)) {
+          // Format array directe
+          newPosts = response.data
+          total = newPosts.length
+        }
+        
+        posts.value = [...posts.value, ...newPosts]
+        totalPosts.value = total
         currentOffset.value += limit
+        
+        console.log(`✅ ${newPosts.length} posts carregats de ${total} totals`)
+        
       } catch (error) {
-        console.error('Error carregant posts:', error)
+        console.error('❌ Error carregant posts:', error)
       } finally {
         loading.value = false
       }

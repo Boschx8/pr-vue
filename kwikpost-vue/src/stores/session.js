@@ -5,11 +5,16 @@ export const useSessionStore = defineStore('session', {
     // Intentar recuperar la sessió del localStorage
     const savedSession = localStorage.getItem('kwikpost-session')
     if (savedSession) {
-      const session = JSON.parse(savedSession)
-      return {
-        isLoggedIn: true,
-        user: session.user,
-        token: session.token
+      try {
+        const session = JSON.parse(savedSession)
+        return {
+          isLoggedIn: true,
+          user: session.user,
+          token: session.token
+        }
+      } catch (e) {
+        console.error('Error parsing sessió del localStorage:', e)
+        localStorage.removeItem('kwikpost-session')
       }
     }
     

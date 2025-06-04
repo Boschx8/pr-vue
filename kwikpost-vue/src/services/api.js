@@ -7,21 +7,22 @@ const api = axios.create({
   baseURL: API_URL
 })
 
-// Funció helper per obtenir el token
-const getAuthHeader = () => {
+// Interceptor per afegir automàticament el token
+api.interceptors.request.use((config) => {
   const storedSession = localStorage.getItem('kwikpost-session')
   if (storedSession) {
     try {
       const session = JSON.parse(storedSession)
       if (session.token) {
-        return { Authorization: `Bearer ${session.token}` }
+        // L'API espera només el token, sense "Bearer"
+        config.headers.Authorization = session.token
       }
     } catch (e) {
       console.error('Error parsing session:', e)
     }
   }
-  return {}
-}
+  return config
+})
 
 export default {
   // Login
@@ -29,47 +30,33 @@ export default {
     return api.post('/login', { username, password })
   },
   
-  // Posts - SENSE 's' segons els errors
+  // Posts
   getPosts(limit = 10, offset = 0) {
-    return api.get(`/post?limit=${limit}&offset=${offset}`, {
-      headers: getAuthHeader()
-    })
+    return api.get(`/posts?limit=${limit}&offset=${offset}`)
   },
   
   getPost(id) {
-    return api.get(`/post/${id}`, {
-      headers: getAuthHeader()
-    })
+    return api.get(`/post/${id}`)
   },
   
   createPost(content) {
-    return api.post('/post', { content }, {
-      headers: getAuthHeader()
-    })
+    return api.post('/post', { content })
   },
   
   updatePost(id, content) {
-    return api.put(`/post/${id}`, { content }, {
-      headers: getAuthHeader()
-    })
+    return api.put(`/post/${id}`, { content })
   },
   
   deletePost(id) {
-    return api.delete(`/post/${id}`, {
-      headers: getAuthHeader()
-    })
+    return api.delete(`/post/${id}`)
   },
   
-  // Users - SENSE 's'
+  // Users
   getUser(username) {
-    return api.get(`/user/${username}`, {
-      headers: getAuthHeader()
-    })
+    return api.get(`/user/${username}`)
   },
   
   getUserPosts(username, limit = 10, offset = 0) {
-    return api.get(`/user/${username}/posts?limit=${limit}&offset=${offset}`, {
-      headers: getAuthHeader()
-    })
+    return api.get(`/user/${username}/posts?limit=${limit}&offset=${offset}`)
   }
 }

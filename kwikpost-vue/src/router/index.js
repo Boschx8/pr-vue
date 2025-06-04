@@ -17,7 +17,16 @@ const routes = [
   {
     path: '/login',
     name: 'login',
-    component: LoginView
+    component: LoginView,
+    beforeEnter: (to, from, next) => {
+      // Si ja està logat, redirigir al seu perfil
+      const sessionStore = useSessionStore()
+      if (sessionStore.isLoggedIn) {
+        next(`/profile/${sessionStore.user.username}`)
+      } else {
+        next()
+      }
+    }
   },
   {
     path: '/profile/:username',
@@ -44,12 +53,21 @@ const router = createRouter({
   routes
 })
 
-// Guard de navegació simple
+// Guard de navegació millorat
 router.beforeEach((to, from, next) => {
   const sessionStore = useSessionStore()
   
-  if (to.meta.requiresAuth && !sessionStore.isLoggedIn) {
-    next('/login')
+  // Comprovar si la ruta requereix autenticació
+  if (to.meta.requiresAuth) {
+    if (!sessionStore.isLoggedIn) {
+      // Guardar la ruta on volien anar per redirigir després del login
+      next({ 
+        path: '/login', 
+        query: { redirect: to.fullPath } 
+      })
+    } else {
+      next()
+    }
   } else {
     next()
   }

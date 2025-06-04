@@ -51,23 +51,38 @@ export default {
     
     const loadPost = async () => {
       try {
+        console.log(`🔍 Carregant post ${route.params.id}`)
         const response = await api.getPost(route.params.id)
-        // L'API pot retornar les dades en diferents formats
+        console.log('📦 Post detail response:', response.data)
+        
+        // Gestionar diferents formats de resposta
         if (response.data.post) {
+          // Format: { post: {...}, replies: [...] }
           post.value = response.data.post
           replies.value = response.data.replies || []
+        } else if (response.data.result) {
+          // Format: { result: {...} }
+          post.value = response.data.result
+          replies.value = response.data.replies || []
         } else {
-          // Si retorna directament el post
+          // Format directe: {...}
           post.value = response.data
           replies.value = response.data.replies || []
         }
-      } catch (err) {
-        console.error('Error carregant post:', err)
-        error.value = 'No s\'ha pogut carregar el post'
         
-        // Si és un 404, tornar a home
+        console.log('✅ Post carregat:', post.value.id)
+        
+      } catch (err) {
+        console.error('❌ Error carregant post:', err)
+        
         if (err.response?.status === 404) {
+          error.value = 'Post no trobat'
           setTimeout(() => router.push('/'), 2000)
+        } else if (err.response?.status === 401) {
+          error.value = 'Cal iniciar sessió per veure aquest post'
+          setTimeout(() => router.push('/login'), 2000)
+        } else {
+          error.value = 'No s\'ha pogut carregar el post'
         }
       }
     }
