@@ -14,7 +14,7 @@ api.interceptors.request.use((config) => {
     try {
       const session = JSON.parse(storedSession)
       if (session.token) {
-        // L'API espera només el token, sense "Bearer"
+      
         config.headers.Authorization = session.token
       }
     } catch (e) {

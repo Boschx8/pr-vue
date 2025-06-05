@@ -6,6 +6,7 @@
         :alt="postUser.username"
         class="user-info__avatar"
         @click.stop="goToProfile"
+        @error="handleImageError"
       >
       <div class="user-info__user">
         <strong @click.stop="goToProfile">{{ postUser.name }}</strong>
@@ -16,15 +17,15 @@
     </div>
     
     <div class="post-detail">
-      <p>{{ post.content || post.text }}</p>
+      <p>{{ postContent }}</p>
       <time class="has-color-light has-text-small">
-        {{ formatDate(post.createdAt || post.date) }}
+        {{ formatDate(postDate) }}
       </time>
     </div>
     
     <div class="interactions">
-      <span class="icon">❤ {{ post.likes || 0 }}</span>
-      <span class="icon">💬 {{ post.replies || post.comments || 0 }}</span>
+      <span class="icon">❤ {{ postLikes }}</span>
+      <span class="icon">💬 {{ postReplies }}</span>
     </div>
   </article>
 </template>
@@ -48,21 +49,116 @@ export default {
   setup(props) {
     const router = useRouter()
     
+    // Normalitzar el contingut del post
+    const postContent = computed(() => {
+      if (typeof props.post === 'string') {
+        try {
+          const parsed = JSON.parse(props.post)
+          return parsed.content || parsed.text || parsed.message || 'Contingut no disponible'
+        } catch (e) {
+          return props.post // Si no es pot parsejar, mostrar com a text
+        }
+      }
+      return props.post.content || props.post.text || props.post.message || 'Contingut no disponible'
+    })
+    
+    // Normalitzar la data
+    const postDate = computed(() => {
+      if (typeof props.post === 'string') {
+        try {
+          const parsed = JSON.parse(props.post)
+          return parsed.createdAt || parsed.publishDate || parsed.date
+        } catch (e) {
+          return new Date().toISOString()
+        }
+      }
+      return props.post.createdAt || props.post.publishDate || props.post.date
+    })
+    
+    // Normalitzar likes
+    const postLikes = computed(() => {
+      if (typeof props.post === 'string') {
+        try {
+          const parsed = JSON.parse(props.post)
+          return parsed.nLikes || parsed.likes || 0
+        } catch (e) {
+          return 0
+        }
+      }
+      return props.post.nLikes || props.post.likes || 0
+    })
+    
+    // Normalitzar replies
+    const postReplies = computed(() => {
+      if (typeof props.post === 'string') {
+        try {
+          const parsed = JSON.parse(props.post)
+          return parsed.nReplies || parsed.replies || parsed.comments || 0
+        } catch (e) {
+          return 0
+        }
+      }
+      return props.post.nReplies || props.post.replies || props.post.comments || 0
+    })
+    
     // Normalitzar les dades de l'usuari
     const postUser = computed(() => {
-      if (!props.post.user) return null
+      let userData = null
+      
+      if (typeof props.post === 'string') {
+        try {
+          const parsed = JSON.parse(props.post)
+          userData = {
+            username: parsed.username,
+            name: parsed.name || parsed.username,
+            avatar: parsed.profileImg
+          }
+        } catch (e) {
+          return null
+        }
+      } else {
+        if (props.post.user) {
+          userData = {
+            username: props.post.user.username,
+            name: props.post.user.name || props.post.user.username,
+            avatar: props.post.user.profileImg || props.post.user.avatar
+          }
+        } else {
+          userData = {
+            username: props.post.username,
+            name: props.post.name || props.post.username,
+            avatar: props.post.profileImg
+          }
+        }
+      }
+      
+      if (!userData || !userData.username) return null
       
       return {
-        username: props.post.user.username,
-        name: props.post.user.name || props.post.user.username,
-        avatar: props.post.user.profileImg || props.post.user.avatar || 'https://via.placeholder.com/50'
+        username: userData.username,
+        name: userData.name,
+        avatar: userData.avatar || 'https://via.placeholder.com/50'
       }
     })
     
     const handlePostClick = () => {
-      // Només anar al detall si no és una resposta
-      if (!props.post.postId) {
-        router.push(`/post/${props.post.id}`)
+      // Obtenir l'ID del post
+      let postId = null
+      
+      if (typeof props.post === 'string') {
+        try {
+          const parsed = JSON.parse(props.post)
+          postId = parsed.id || parsed.postId
+        } catch (e) {
+          return
+        }
+      } else {
+        postId = props.post.id || props.post.postId
+      }
+      
+      // Només anar al detall si no és una resposta i tenim ID
+      if (postId && !props.post.postId) {
+        router.push(`/post/${postId}`)
       }
     }
     
@@ -70,6 +166,10 @@ export default {
       if (postUser.value) {
         router.push(`/profile/${postUser.value.username}`)
       }
+    }
+    
+    const handleImageError = (e) => {
+      e.target.src = 'https://via.placeholder.com/50'
     }
     
     const formatDate = (dateString) => {
@@ -111,8 +211,13 @@ export default {
     
     return {
       postUser,
+      postContent,
+      postDate,
+      postLikes,
+      postReplies,
       handlePostClick,
       goToProfile,
+      handleImageError,
       formatDate
     }
   }
@@ -163,6 +268,7 @@ export default {
   margin: 0;
   font-size: 14px;
   word-wrap: break-word;
+  white-space: pre-wrap; /* Preservar salts de línia */
 }
 
 .post-detail time {

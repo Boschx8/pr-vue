@@ -59,6 +59,39 @@ export default {
     const currentOffset = ref(0)
     const limit = 10
     
+    const processPostData = (rawPost) => {
+      // Si el post és un string JSON, parsejar-lo
+      if (typeof rawPost === 'string') {
+        try {
+          const parsed = JSON.parse(rawPost)
+          return processPostData(parsed) // Cridar recursivament amb l'objecte parsejat
+        } catch (e) {
+          console.error('Error parsejant post:', e)
+          return null
+        }
+      }
+      
+      // Si és un objecte, processar-lo
+      if (typeof rawPost === 'object' && rawPost !== null) {
+        return {
+          id: rawPost.id || rawPost.postId,
+          content: rawPost.content || rawPost.text || rawPost.message,
+          createdAt: rawPost.createdAt || rawPost.publishDate || rawPost.date,
+          likes: rawPost.nLikes || rawPost.likes || 0,
+          replies: rawPost.nReplies || rawPost.replies || rawPost.comments || 0,
+          postId: rawPost.postId, // Per identificar si és una resposta
+          user: {
+            id: rawPost.userId || rawPost.user?.id,
+            username: rawPost.username || rawPost.user?.username,
+            name: rawPost.name || rawPost.user?.name || rawPost.username || rawPost.user?.username,
+            avatar: rawPost.profileImg || rawPost.user?.profileImg || rawPost.user?.avatar || 'https://via.placeholder.com/50'
+          }
+        }
+      }
+      
+      return null
+    }
+    
     const loadPosts = async () => {
       loading.value = true
       error.value = ''
@@ -66,35 +99,42 @@ export default {
       try {
         console.log(`🔍 Carregant posts (limit: ${limit}, offset: ${currentOffset.value})`)
         const response = await api.getPosts(limit, currentOffset.value)
-        console.log('📦 Posts response:', response.data)
+        console.log('📦 Posts response RAW:', response.data)
         
         // Gestionar la resposta de l'API
-        // Format de l'API: { paginator: { total, offset, limit }, result: [...] }
-        let newPosts = []
+        let rawPosts = []
         let total = 0
         
         if (response.data.result && Array.isArray(response.data.result)) {
           // Format KwikPost API: { paginator: {...}, result: [...] }
-          newPosts = response.data.result
+          rawPosts = response.data.result
           total = response.data.paginator?.total || 0
         } else if (response.data.posts && Array.isArray(response.data.posts)) {
           // Format alternatiu: { posts: [...], total: X }
-          newPosts = response.data.posts
+          rawPosts = response.data.posts
           total = response.data.total || 0
         } else if (Array.isArray(response.data)) {
           // Format: [...] (array directe)
-          newPosts = response.data
-          total = newPosts.length
+          rawPosts = response.data
+          total = rawPosts.length
         }
         
-        console.log(`📝 ${newPosts.length} posts carregats de ${total} totals`)
+        console.log(`📝 ${rawPosts.length} posts crus rebuts`)
+        
+        // Processar cada post
+        const processedPosts = rawPosts
+          .map(processPostData)
+          .filter(post => post !== null) // Filtrar posts que no s'han pogut processar
+        
+        console.log(`✅ ${processedPosts.length} posts processats correctament`)
+        console.log('Posts processats:', processedPosts)
         
         // Afegir els nous posts als existents
-        posts.value = [...posts.value, ...newPosts]
+        posts.value = [...posts.value, ...processedPosts]
         totalPosts.value = total
         currentOffset.value += limit
         
-        if (newPosts.length === 0 && posts.value.length === 0) {
+        if (processedPosts.length === 0 && posts.value.length === 0) {
           error.value = 'No hi ha posts disponibles'
         }
         
@@ -103,7 +143,6 @@ export default {
         
         if (err.response?.status === 401) {
           error.value = 'Cal iniciar sessió per veure els posts'
-          // Opcional: redirigir al login després d'uns segons
           setTimeout(() => {
             router.push('/login')
           }, 3000)
