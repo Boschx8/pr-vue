@@ -4,8 +4,8 @@
       <PostComponent :post="post" />
       
       <div v-if="isOwnPost" class="actions-wrapper">
-        <button class="btn" @click="deletePost">🗑 Esborrar</button>
-        <button class="btn" @click="editPost">✎ Editar</button>
+        <button class="btn" @click="deletePost">🗑 Delete</button>
+        <button class="btn" @click="editPost">✎ Edit</button>
       </div>
     </div>
     

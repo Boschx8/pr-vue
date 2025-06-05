@@ -10,7 +10,7 @@
       class="menu-link"
       :class="{ active: $route.name === 'login' }"
     >
-      𓉞
+      🗣️
     </router-link>
     
     <router-link 

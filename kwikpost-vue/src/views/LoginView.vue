@@ -2,22 +2,6 @@
   <div>
     <h1 class="title-section">Login</h1>
     
-    <div class="login-info">
-      <p class="has-color-grey has-text-small">
-        <strong>Credencials de prova:</strong><br>
-        Username: <code>johndoe</code><br>
-        Password: <code>a1b2c3d4</code>
-      </p>
-    </div>
-    
-    <!-- Debug info -->
-    <div v-if="debugInfo" class="debug-info">
-      <h3>🔧 Debug Login:</h3>
-      <p><strong>Sessió actual:</strong> {{ sessionStore.isLoggedIn ? 'Activa' : 'No activa' }}</p>
-      <p v-if="sessionStore.user"><strong>Usuari:</strong> {{ sessionStore.user.username }}</p>
-      <p v-if="sessionStore.token"><strong>Token:</strong> {{ sessionStore.token.substring(0, 20) }}...</p>
-    </div>
-    
     <form @submit.prevent="handleLogin">
       <div class="input-group">
         <label for="username">Username:</label>
@@ -49,17 +33,6 @@
         {{ loading ? 'Iniciant sessió...' : 'Login' }}
       </button>
     </form>
-    
-    <!-- Test token button -->
-    <div v-if="sessionStore.isLoggedIn" class="test-section">
-      <h3>🧪 Test Token:</h3>
-      <button @click="testToken" class="btn" :disabled="testingToken">
-        {{ testingToken ? 'Provant...' : 'Provar token actual' }}
-      </button>
-      <p v-if="tokenTestResult" :class="tokenTestResult.success ? 'success' : 'error'">
-        {{ tokenTestResult.message }}
-      </p>
-    </div>
   </div>
 </template>
 
@@ -76,8 +49,8 @@ export default {
     const route = useRoute()
     const sessionStore = useSessionStore()
     
-    const username = ref('johndoe') // Valor per defecte
-    const password = ref('a1b2c3d4') // Valor per defecte
+    const username = ref('johndoe') 
+    const password = ref('a1b2c3d4') 
     const error = ref('')
     const loading = ref(false)
     const debugInfo = ref(true)

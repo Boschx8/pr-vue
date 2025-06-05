@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1 class="title-section">{{ isEditMode ? 'Editar post' : 'Nou post' }}</h1>
+    <h1 class="title-section">{{ isEditMode ? 'Edit post' : 'New post' }}</h1>
     
     <div class="form-post">
       <img 
@@ -12,7 +12,7 @@
       <form class="form-post__form" @submit.prevent="handleSubmit">
         <textarea
           v-model="content"
-          placeholder="Què estàs pensant?"
+          placeholder="What are you thinking about?"
           rows="5"
           required
           :disabled="loading"
