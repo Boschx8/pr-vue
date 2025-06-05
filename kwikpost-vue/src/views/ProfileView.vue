@@ -154,11 +154,26 @@ export default {
       }
     }
     
-    const formatJoinDate = (dateString) => {
-      const date = new Date(dateString)
-      const options = { year: 'numeric', month: 'long' }
-      return date.toLocaleDateString('en-US', options)
-    }
+   const formatJoinDate = (dateString) => {
+  if (!dateString) return ''
+  
+  const date = new Date(dateString)
+  
+  // Verificar que la data és vàlida
+  if (isNaN(date.getTime())) {
+    return ''
+  }
+  
+  // Obtenir dia, mes, any, hora i minuts
+  const day = date.getDate().toString().padStart(2, '0')
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const year = date.getFullYear()
+  const hours = date.getHours().toString().padStart(2, '0')
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  
+  // Retornar en format DD/MM/YYYY HH:MM
+  return `${day}/${month}/${year} ${hours}:${minutes}`
+}
     
     // Recarregar dades quan canvia l'username
     watch(() => route.params.username, () => {

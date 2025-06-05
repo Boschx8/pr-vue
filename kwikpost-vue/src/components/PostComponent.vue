@@ -173,41 +173,25 @@ export default {
     }
     
     const formatDate = (dateString) => {
-      if (!dateString) return ''
-      
-      const date = new Date(dateString)
-      const now = new Date()
-      const diff = now - date
-      
-      // Convertir a segons
-      const seconds = Math.floor(diff / 1000)
-      
-      if (seconds < 60) {
-        return 'ara mateix'
-      }
-      
-      // Convertir a minuts
-      const minutes = Math.floor(seconds / 60)
-      if (minutes < 60) {
-        return `${minutes}m`
-      }
-      
-      // Convertir a hores
-      const hours = Math.floor(minutes / 60)
-      if (hours < 24) {
-        return `${hours}h`
-      }
-      
-      // Convertir a dies
-      const days = Math.floor(hours / 24)
-      if (days < 30) {
-        return `${days}d`
-      }
-      
-      // Si fa més de 30 dies, mostrar la data
-      const options = { day: 'numeric', month: 'short' }
-      return date.toLocaleDateString('ca-ES', options)
-    }
+  if (!dateString) return ''
+  
+  const date = new Date(dateString)
+  
+  // Verificar que la data és vàlida
+  if (isNaN(date.getTime())) {
+    return ''
+  }
+  
+  // Obtenir dia, mes, any, hora i minuts
+  const day = date.getDate().toString().padStart(2, '0')
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const year = date.getFullYear()
+  const hours = date.getHours().toString().padStart(2, '0')
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  
+  // Retornar en format DD/MM/YYYY HH:MM
+  return `${day}/${month}/${year} ${hours}:${minutes}`
+}
     
     return {
       postUser,
