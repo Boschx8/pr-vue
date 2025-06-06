@@ -64,7 +64,6 @@ export default {
         try {
           const response = await api.getPost(route.params.id)
           
-          // Verificar que l'usuari és el propietari
           const postData = response.data.post || response.data
           if (postData.user.username !== sessionStore.user?.username) {
             error.value = 'You can only edit your own posts'
@@ -99,8 +98,6 @@ export default {
           response = await api.createPost(content.value)
         }
         
-        // Anar al detall del post
-        // L'API pot retornar l'id de diferents maneres
         const postId = response.data.id || response.data.post?.id || route.params.id
         router.push(`/post/${postId}`)
       } catch (err) {

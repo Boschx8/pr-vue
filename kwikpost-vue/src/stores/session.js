@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 
 export const useSessionStore = defineStore('session', {
   state: () => {
-    // Intentar recuperar la sessió del localStorage
+
     const savedSession = localStorage.getItem('kwikpost-session')
     if (savedSession) {
       try {
@@ -36,7 +36,7 @@ export const useSessionStore = defineStore('session', {
       this.user = userData
       this.token = token
       
-      // Guardar la sessió al localStorage
+
       localStorage.setItem('kwikpost-session', JSON.stringify({
         user: userData,
         token: token
@@ -48,7 +48,6 @@ export const useSessionStore = defineStore('session', {
       this.user = null
       this.token = null
       
-      // Esborrar del localStorage
       localStorage.removeItem('kwikpost-session')
     }
   }

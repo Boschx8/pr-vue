@@ -53,17 +53,13 @@ export default {
       try {
         const response = await api.getPost(route.params.id)
         
-        // Gestionar diferents formats de resposta
         if (response.data.post) {
-          // Format: { post: {...}, replies: [...] }
           post.value = response.data.post
           replies.value = response.data.replies || []
         } else if (response.data.result) {
-          // Format: { result: {...} }
           post.value = response.data.result
           replies.value = response.data.replies || []
         } else {
-          // Format directe: {...}
           post.value = response.data
           replies.value = response.data.replies || []
         }

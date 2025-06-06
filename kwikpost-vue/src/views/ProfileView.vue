@@ -73,7 +73,6 @@ export default {
       try {
         const response = await api.getUser(route.params.username)
         
-        // Gestionar la resposta
         const userData = response.data.result || response.data
         
         user.value = {
@@ -108,20 +107,16 @@ export default {
         
         const response = await api.getUserPosts(route.params.username, limit, currentOffset.value)
         
-        // Gestionar diferents formats de resposta
         let newPosts = []
         let total = 0
         
         if (response.data.result && Array.isArray(response.data.result)) {
-          // Format KwikPost: { paginator: {...}, result: [...] }
           newPosts = response.data.result
           total = response.data.paginator?.total || 0
         } else if (response.data.posts && Array.isArray(response.data.posts)) {
-          // Format alternatiu: { posts: [...], total: X }
           newPosts = response.data.posts
           total = response.data.total || 0
         } else if (Array.isArray(response.data)) {
-          // Format array directe
           newPosts = response.data
           total = newPosts.length
         }
@@ -155,23 +150,19 @@ export default {
   
   const date = new Date(dateString)
   
-  // Verificar que la data és vàlida
   if (isNaN(date.getTime())) {
     return ''
   }
   
-  // Obtenir dia, mes, any, hora i minuts
   const day = date.getDate().toString().padStart(2, '0')
   const month = (date.getMonth() + 1).toString().padStart(2, '0')
   const year = date.getFullYear()
   const hours = date.getHours().toString().padStart(2, '0')
   const minutes = date.getMinutes().toString().padStart(2, '0')
   
-  // Retornar en format DD/MM/YYYY HH:MM
   return `${day}/${month}/${year} ${hours}:${minutes}`
 }
     
-    // Recarregar dades quan canvia l'username
     watch(() => route.params.username, () => {
       if (route.name === 'profile') {
         loadUserData()

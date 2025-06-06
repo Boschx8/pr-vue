@@ -60,18 +60,18 @@ export default {
     const limit = 10
     
     const processPostData = (rawPost) => {
-      // Si el post és un string JSON, parsejar-lo
+
       if (typeof rawPost === 'string') {
         try {
           const parsed = JSON.parse(rawPost)
-          return processPostData(parsed) // Cridar recursivament amb l'objecte parsejat
+          return processPostData(parsed) 
         } catch (e) {
           console.error('Error parsejant post:', e)
           return null
         }
       }
       
-      // Si és un objecte, processar-lo
+
       if (typeof rawPost === 'object' && rawPost !== null) {
         return {
           id: rawPost.id || rawPost.postId,
@@ -79,7 +79,7 @@ export default {
           createdAt: rawPost.createdAt || rawPost.publishDate || rawPost.date,
           likes: rawPost.nLikes || rawPost.likes || 0,
           replies: rawPost.nReplies || rawPost.replies || rawPost.comments || 0,
-          postId: rawPost.postId, // Per identificar si és una resposta
+          postId: rawPost.postId, 
           user: {
             id: rawPost.userId || rawPost.user?.id,
             username: rawPost.username || rawPost.user?.username,
@@ -99,32 +99,26 @@ export default {
       try {
         const response = await api.getPosts(limit, currentOffset.value)
         
-        // Gestionar la resposta de l'API
+
         let rawPosts = []
         let total = 0
         
         if (response.data.result && Array.isArray(response.data.result)) {
-          // Format KwikPost API: { paginator: {...}, result: [...] }
           rawPosts = response.data.result
           total = response.data.paginator?.total || 0
         } else if (response.data.posts && Array.isArray(response.data.posts)) {
-          // Format alternatiu: { posts: [...], total: X }
           rawPosts = response.data.posts
           total = response.data.total || 0
         } else if (Array.isArray(response.data)) {
-          // Format: [...] (array directe)
           rawPosts = response.data
           total = rawPosts.length
         }
         
-        
-        // Processar cada post
         const processedPosts = rawPosts
           .map(processPostData)
-          .filter(post => post !== null) // Filtrar posts que no s'han pogut processar
-        
-        
-        // Afegir els nous posts als existents
+          .filter(post => post !== null) 
+               
+
         posts.value = [...posts.value, ...processedPosts]
         totalPosts.value = total
         currentOffset.value += limit
@@ -134,7 +128,7 @@ export default {
         }
         
       } catch (err) {
-        console.error('Error carregant posts:', err)
+        console.error('Error loading posts:', err)
         
         if (err.response?.status === 401) {
           error.value = 'You need to log in to see posts'

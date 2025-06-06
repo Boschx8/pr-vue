@@ -49,20 +49,18 @@ export default {
   setup(props) {
     const router = useRouter()
     
-    // Normalitzar el contingut del post
     const postContent = computed(() => {
       if (typeof props.post === 'string') {
         try {
           const parsed = JSON.parse(props.post)
           return parsed.content || parsed.text || parsed.message || 'Contingut no disponible'
         } catch (e) {
-          return props.post // Si no es pot parsejar, mostrar com a text
+          return props.post 
         }
       }
       return props.post.content || props.post.text || props.post.message || 'Contingut no disponible'
     })
     
-    // Normalitzar la data
     const postDate = computed(() => {
       if (typeof props.post === 'string') {
         try {
@@ -75,7 +73,6 @@ export default {
       return props.post.createdAt || props.post.publishDate || props.post.date
     })
     
-    // Normalitzar likes
     const postLikes = computed(() => {
       if (typeof props.post === 'string') {
         try {
@@ -88,7 +85,6 @@ export default {
       return props.post.nLikes || props.post.likes || 0
     })
     
-    // Normalitzar replies
     const postReplies = computed(() => {
       if (typeof props.post === 'string') {
         try {
@@ -101,7 +97,6 @@ export default {
       return props.post.nReplies || props.post.replies || props.post.comments || 0
     })
     
-    // Normalitzar les dades de l'usuari
     const postUser = computed(() => {
       let userData = null
       
@@ -142,7 +137,6 @@ export default {
     })
     
     const handlePostClick = () => {
-      // Obtenir l'ID del post
       let postId = null
       
       if (typeof props.post === 'string') {
@@ -156,7 +150,6 @@ export default {
         postId = props.post.id || props.post.postId
       }
       
-      // Només anar al detall si no és una resposta i tenim ID
       if (postId && !props.post.postId) {
         router.push(`/post/${postId}`)
       }
@@ -177,19 +170,16 @@ export default {
   
   const date = new Date(dateString)
   
-  // Verificar que la data és vàlida
   if (isNaN(date.getTime())) {
     return ''
   }
   
-  // Obtenir dia, mes, any, hora i minuts
   const day = date.getDate().toString().padStart(2, '0')
   const month = (date.getMonth() + 1).toString().padStart(2, '0')
   const year = date.getFullYear()
   const hours = date.getHours().toString().padStart(2, '0')
   const minutes = date.getMinutes().toString().padStart(2, '0')
   
-  // Retornar en format DD/MM/YYYY HH:MM
   return `${day}/${month}/${year} ${hours}:${minutes}`
 }
     
@@ -252,7 +242,7 @@ export default {
   margin: 0;
   font-size: 14px;
   word-wrap: break-word;
-  white-space: pre-wrap; /* Preservar salts de línia */
+  white-space: pre-wrap; 
 }
 
 .post-detail time {

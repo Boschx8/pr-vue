@@ -45,7 +45,6 @@ export default {
     })
     
     const handleImageError = (e) => {
-      // Si la imatge falla, mostrar un placeholder
       e.target.style.display = 'none'
     }
     

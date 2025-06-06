@@ -71,7 +71,7 @@ export default {
         const response = await api.login(username.value, password.value)
 
         
-        // Comprovar que tenim les dades necessàries
+   
         const userData = response.data.user || response.data
         const token = response.data.token || response.data.access_token
         
@@ -81,7 +81,7 @@ export default {
         }
         
         if (!token) {
-          throw new Error('No s\'ha rebut el token d\'autenticació')
+          throw new Error('Cannot retrieve token from response')
         }
         
         // Mapejar els camps correctament
@@ -92,7 +92,7 @@ export default {
             `${userData.name} ${userData.surname || ''}`.trim() : 
             userData.username,
           avatar: userData.profileImg || userData.avatar || 'https://via.placeholder.com/100',
-          bio: userData.bio || `Hola! Sóc ${userData.name || userData.username}`,
+          bio: userData.bio || `Hi! I am ${userData.name || userData.username}`,
           createdAt: userData.registrationDate || userData.createdAt || new Date().toISOString()
         }
         
@@ -148,7 +148,6 @@ export default {
       }
     }
     
-    // Comprovar si ja està logat
     onMounted(() => {
       if (sessionStore.isLoggedIn) {
         router.push(`/profile/${sessionStore.user.username}`)
