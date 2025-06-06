@@ -67,14 +67,14 @@ export default {
           // Verificar que l'usuari és el propietari
           const postData = response.data.post || response.data
           if (postData.user.username !== sessionStore.user?.username) {
-            error.value = 'No pots editar aquest post'
+            error.value = 'You can only edit your own posts'
             setTimeout(() => router.push('/'), 2000)
           }
           
           content.value = postData.content
         } catch (err) {
-          console.error('Error carregant post:', err)
-          error.value = 'No s\'ha pogut carregar el post'
+          console.error('Error loading post:', err)
+          error.value = 'The post could not be loaded'
         } finally {
           loading.value = false
         }
@@ -83,7 +83,7 @@ export default {
     
     const handleSubmit = async () => {
       if (!content.value.trim()) {
-        error.value = 'El contingut no pot estar buit'
+        error.value = 'The content cannot be empty'
         return
       }
       
@@ -104,8 +104,8 @@ export default {
         const postId = response.data.id || response.data.post?.id || route.params.id
         router.push(`/post/${postId}`)
       } catch (err) {
-        console.error('Error guardant post:', err)
-        error.value = 'No s\'ha pogut guardar el post'
+        console.error('Error saving post:', err)
+        error.value = 'The post could not be saved'
       } finally {
         loading.value = false
       }

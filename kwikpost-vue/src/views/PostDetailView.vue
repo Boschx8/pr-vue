@@ -51,9 +51,7 @@ export default {
     
     const loadPost = async () => {
       try {
-        console.log(`🔍 Carregant post ${route.params.id}`)
         const response = await api.getPost(route.params.id)
-        console.log('📦 Post detail response:', response.data)
         
         // Gestionar diferents formats de resposta
         if (response.data.post) {
@@ -70,31 +68,31 @@ export default {
           replies.value = response.data.replies || []
         }
         
-        console.log('✅ Post carregat:', post.value.id)
+        console.log('Post loaded:', post.value.id)
         
       } catch (err) {
-        console.error('❌ Error carregant post:', err)
+        console.error('Error loading post:', err)
         
         if (err.response?.status === 404) {
-          error.value = 'Post no trobat'
+          error.value = 'Post not found'
           setTimeout(() => router.push('/'), 2000)
         } else if (err.response?.status === 401) {
-          error.value = 'Cal iniciar sessió per veure aquest post'
+          error.value = 'You must be logged in to view this post'
           setTimeout(() => router.push('/login'), 2000)
         } else {
-          error.value = 'No s\'ha pogut carregar el post'
+          error.value = 'Could not load post'
         }
       }
     }
     
     const deletePost = async () => {
-      if (confirm('Segur que vols esborrar aquest post?')) {
+      if (confirm('Are you sure you want to delete this post?')) {
         try {
           await api.deletePost(route.params.id)
           router.push('/')
         } catch (err) {
-          console.error('Error esborrant post:', err)
-          alert('No s\'ha pogut esborrar el post')
+          console.error('Error deleteing post', err)
+          alert('The post could not be deleted.')
         }
       }
     }

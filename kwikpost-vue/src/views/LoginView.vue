@@ -59,7 +59,7 @@ export default {
     
     const handleLogin = async () => {
       if (!username.value || !password.value) {
-        error.value = 'Si us plau, omple tots els camps'
+        error.value = 'Please fill in both fields.'
         return
       }
       
@@ -68,19 +68,16 @@ export default {
       tokenTestResult.value = null
       
       try {
-        console.log('🔐 Intentant login amb:', username.value, '/', password.value)
         const response = await api.login(username.value, password.value)
-        console.log('📦 Login response completa:', response.data)
+
         
         // Comprovar que tenim les dades necessàries
         const userData = response.data.user || response.data
         const token = response.data.token || response.data.access_token
         
-        console.log('👤 User data:', userData)
-        console.log('🔑 Token:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN')
         
         if (!userData) {
-          throw new Error('No s\'han rebut les dades d\'usuari')
+          throw new Error('Cannot retrieve user data from response')
         }
         
         if (!token) {
@@ -99,7 +96,6 @@ export default {
           createdAt: userData.registrationDate || userData.createdAt || new Date().toISOString()
         }
         
-        console.log('👤 User data mapeada:', userDataMapped)
         
         // Guardar a la store
         sessionStore.setSession(userDataMapped, token)
@@ -109,20 +105,18 @@ export default {
         
         // Redirigir
         const redirectPath = route.query.redirect || `/profile/${userData.username}`
-        console.log('🔄 Redirigint a:', redirectPath)
         router.push(redirectPath)
         
       } catch (err) {
-        console.error('❌ Error login:', err)
         
         if (err.response?.status === 401) {
-          error.value = 'Credencials incorrectes'
+          error.value = 'Invalid username or password'
         } else if (err.response?.status === 404) {
-          error.value = 'Usuari no trobat'
+          error.value = 'User not found'
         } else if (err.response?.data?.message) {
           error.value = err.response.data.message
         } else {
-          error.value = 'Error de connexió. Comprova que l\'API estigui funcionant.'
+          error.value = 'Connection error. Please try again later.'
         }
       } finally {
         loading.value = false
@@ -138,18 +132,16 @@ export default {
       tokenTestResult.value = null
       
       try {
-        console.log('🧪 Provant token...')
         const response = await api.getUser(sessionStore.user.username)
-        console.log('✅ Token vàlid! Response:', response.data)
         tokenTestResult.value = {
           success: true,
-          message: '✅ Token vàlid!'
+          message: 'Valid token!'
         }
       } catch (err) {
-        console.error('❌ Token invàlid:', err)
+        console.error('Invalid token:', err)
         tokenTestResult.value = {
           success: false,
-          message: `❌ Token invàlid: ${err.response?.status} ${err.response?.statusText}`
+          message: `Invalid token: ${err.response?.status} ${err.response?.statusText}`
         }
       } finally {
         testingToken.value = false
@@ -159,7 +151,6 @@ export default {
     // Comprovar si ja està logat
     onMounted(() => {
       if (sessionStore.isLoggedIn) {
-        console.log('ℹ️ Ja està logat, redirigint...')
         router.push(`/profile/${sessionStore.user.username}`)
       }
     })

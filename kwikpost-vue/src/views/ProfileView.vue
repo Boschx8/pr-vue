@@ -71,9 +71,7 @@ export default {
     
     const loadUserData = async () => {
       try {
-        console.log(`👤 Carregant dades de ${route.params.username}`)
         const response = await api.getUser(route.params.username)
-        console.log('📦 User response:', response.data)
         
         // Gestionar la resposta
         const userData = response.data.result || response.data
@@ -87,10 +85,10 @@ export default {
           createdAt: userData.registrationDate || userData.createdAt
         }
         
-        console.log('✅ Usuari carregat:', user.value.username)
+        console.log('User loaded:', user.value.username)
         
       } catch (error) {
-        console.error('❌ Error carregant usuari:', error)
+        console.error('Error loading user:', error)
         
         if (error.response?.status === 404) {
           router.push('/')
@@ -108,9 +106,7 @@ export default {
           posts.value = []
         }
         
-        console.log(`📝 Carregant posts de ${route.params.username} (offset: ${currentOffset.value})`)
         const response = await api.getUserPosts(route.params.username, limit, currentOffset.value)
-        console.log('📦 User posts response:', response.data)
         
         // Gestionar diferents formats de resposta
         let newPosts = []
@@ -134,10 +130,10 @@ export default {
         totalPosts.value = total
         currentOffset.value += limit
         
-        console.log(`✅ ${newPosts.length} posts carregats de ${total} totals`)
+        console.log(`${newPosts.length} loaded posts of ${total} total`)
         
       } catch (error) {
-        console.error('❌ Error carregant posts:', error)
+        console.error('Error loading posts:', error)
       } finally {
         loading.value = false
       }
@@ -148,7 +144,7 @@ export default {
     }
     
     const handleLogout = () => {
-      if (confirm('Segur que vols tancar la sessió?')) {
+      if (confirm('Are you sure you want to log out?')) {
         sessionStore.clearSession()
         router.push('/')
       }

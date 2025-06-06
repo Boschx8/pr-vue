@@ -97,9 +97,7 @@ export default {
       error.value = ''
       
       try {
-        console.log(`🔍 Carregant posts (limit: ${limit}, offset: ${currentOffset.value})`)
         const response = await api.getPosts(limit, currentOffset.value)
-        console.log('📦 Posts response RAW:', response.data)
         
         // Gestionar la resposta de l'API
         let rawPosts = []
@@ -119,15 +117,12 @@ export default {
           total = rawPosts.length
         }
         
-        console.log(`📝 ${rawPosts.length} posts crus rebuts`)
         
         // Processar cada post
         const processedPosts = rawPosts
           .map(processPostData)
           .filter(post => post !== null) // Filtrar posts que no s'han pogut processar
         
-        console.log(`✅ ${processedPosts.length} posts processats correctament`)
-        console.log('Posts processats:', processedPosts)
         
         // Afegir els nous posts als existents
         posts.value = [...posts.value, ...processedPosts]
@@ -135,23 +130,23 @@ export default {
         currentOffset.value += limit
         
         if (processedPosts.length === 0 && posts.value.length === 0) {
-          error.value = 'No hi ha posts disponibles'
+          error.value = 'The are no posts available'
         }
         
       } catch (err) {
-        console.error('❌ Error carregant posts:', err)
+        console.error('Error carregant posts:', err)
         
         if (err.response?.status === 401) {
-          error.value = 'Cal iniciar sessió per veure els posts'
+          error.value = 'You need to log in to see posts'
           setTimeout(() => {
             router.push('/login')
           }, 3000)
         } else if (err.response?.status === 404) {
-          error.value = 'No s\'han trobat posts'
+          error.value = 'No posts found'
         } else if (err.response?.data?.message) {
-          error.value = `Error de l'API: ${err.response.data.message}`
+          error.value = `API error: ${err.response.data.message}`
         } else {
-          error.value = `Error carregant els posts: ${err.message}`
+          error.value = `Error loading posts: ${err.message}`
         }
       } finally {
         loading.value = false
@@ -172,7 +167,6 @@ export default {
     }
     
     onMounted(() => {
-      console.log('🏠 HomeView mounted')
       loadPosts()
     })
     
